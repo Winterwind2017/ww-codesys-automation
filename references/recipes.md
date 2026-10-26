@@ -180,3 +180,47 @@ client.online_logout(); client.online_simulation(False)
 
 真 PLC 的话把 `simulation=False`，并在设备通信设置里指向一个**已启动**的网关：
 `device.set_gateway_and_address(<网关 guid>, "192.168.1.10")`（IP 会被规范成 `0127.0000.0000.0001` 这种形式）。
+
+
+## 15. 建一整套 IEC 对象（无 PLC 也行）
+
+```python
+app = "/PLC/Plc Logic/Application"
+client.create_typed("gvl", "GVL", text="VAR_GLOBAL\n\tnGlobal : INT;\nEND_VAR\n")
+client.create_typed("dut", "ST_Data", text="TYPE ST_Data :\nSTRUCT\n\tnX : INT;\nEND_STRUCT\nEND_TYPE\n")
+client.create_typed("interface", "I_Run")
+fb = client.create_typed("function_block", "FB_Motor",
+                         text="FUNCTION_BLOCK FB_Motor\nVAR_INPUT\n\tbStart : BOOL;\nEND_VAR\n")
+client.add_member(fb["path"], "method", "Start", return_type="BOOL", text="bRun := bStart;\n")
+client.add_member(fb["path"], "property", "Speed", return_type="INT")
+client.add_member(fb["path"], "action", "Reset")
+client.create_typed("function", "F_Add", return_type="INT")
+assert client.members(fb["path"])["count"] == 3
+service.compile(client)          # 判据：0 错误（实测通过）
+```
+
+## 16. 符号配置 / 文本表 / 任务参数
+
+```python
+client.symbols_create(export_comments=True)      # 内部用 Guid.Empty 作为 layout calculator
+client.symbols_info("/PLC/Plc Logic/Application/Symbols")   # build 后：138 datatypes / 69 signatures
+
+client.textlist_create("Texts", languages=["zh-CN", "en"])
+client.textlist_languages("/PLC/Plc Logic/Application/Texts", add="fr")
+client.textlist_export("/PLC/Plc Logic/Application/Texts", r"D:\work\texts.xml")
+
+client.task_update("/PLC/Plc Logic/Application/Task Configuration/MainTask",
+                   priority="20", interval="10")   # 只能传字符串
+```
+
+## 17. 工程元数据 → 编译库 → 另存
+
+```python
+client.project_meta(title="DemoKit", version="1.0.0.0", company="Winterwind")   # company 必须有
+lib = client.export_library(r"D:\work\DemoKit.compiled-library")               # 4308 B
+saved = client.save_as(r"D:\work\job_copy.project")   # 副本成为 primary
+assert saved["is_primary"] and saved["size"] > 0       # 别信引擎那句『正由…使用』
+client.io_export(r"D:\work\io.csv")                  # I/O 映射 CSV
+client.project_integrity(enable=True)
+client.project_users()                                # 只读；创建会被 (nobody) 拒
+```

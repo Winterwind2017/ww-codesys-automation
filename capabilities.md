@@ -1,8 +1,8 @@
 # 能力清单（快照）
 
-由 `tools/sync_capabilities.py` 从内核生成；出处 `codesyskit@5a4130e`。
+由 `tools/sync_capabilities.py` 从内核生成；出处 `codesyskit@9a10093`。
 
-## 已打通（56）
+## 已打通（71）
 
 | 能力 | 族 | 级别 | 证据 |
 | --- | --- | --- | --- |
@@ -35,6 +35,21 @@
 | `build.task_required` | 编译与判据 | L4 | live_service：无任务配置的 bare 工程对同样乱码报 0 错误（假绿灯） |
 | `build.readback` | 编译与判据 | L4 | live_service：close -> open -> 读 implementation 与写入一致 |
 | `build.log_parse` | 编译与判据 | L4 | test_engine_log：解析编译完成 N错误,M警告 与 C 码，丢弃 Text 进度行 |
+| `obj.model` | 对象结构 | L3 | live_deep：GVL/DUT/interface/FB/function 全建成功，建完 0 错误 |
+| `obj.members` | 对象结构 | L3 | live_deep：FB 下建 method/property/action，pou.members 回读 3 个 |
+| `obj.member_text` | 对象结构 | L2 | live_deep：方法实现体写入后参与编译且 0 错误 |
+| `sym.config` | 对象结构 | L3 | live_deep：symbols.create -> create_symbol_config(comments, opc_ua, Guid.Empty)；build 后 138 datatypes / 69 signatures |
+| `i18n.textlist` | 对象结构 | L2 | live_deep：textlist.create(zh-CN,en) + add fr -> 3 种语言；export 238 B |
+| `proj.meta` | 工程 | L2 | live_deep：title/company/version 写入并可回读 |
+| `proj.library` | 工程 | L3 | live_deep：project.meta + export_library -> 4308 B 编译库（缺 company 会被拒） |
+| `proj.save_as` | 工程 | L3 | live_deep：副本变 primary，用文件+改名路径判据（引擎会报『正由…使用』但副本已完整） |
+| `proj.users` | 工程 | L2 | live_deep：列出 Owner/Everyone；创建被 (nobody) 权限拒绝（诚实报 refused） |
+| `proj.integrity` | 工程 | L2 | live_deep：enable_integrity_check 后 false -> true |
+| `proj.iomap` | 工程 | L2 | live_deep：导出 I/O 映射 CSV 235 B |
+| `app.lifecycle` | 编译与判据 | L3 | live_deep：app.clean -> is_uptodate false；app.generate -> true；is_online_change_possible true |
+| `task.timing` | 编译与判据 | L3 | live_deep：task.update priority 1->20、interval 20->10ms（值必须传字符串） |
+| `cmd.map` | IDE 命令通道 | L2 | docs/COMMANDS.md：832 条唯一命令 / 90 族，recon/commands.json 可复跑 |
+| `online.force` | 在线（网关/PLC） | L3 | live_deep：仿真里把 nCounter 钉在 777；unforce 后 790->888 |
 | `obj.info` | 对象结构 | L2 | live_surface：object.info 返回 name/path/is_folder/has_textual_* /children |
 | `obj.rename` | 对象结构 | L3 | live_surface：rename -> PLC_MAIN 后回读名字一致 |
 | `obj.move` | 对象结构 | L3 | live_surface：move 进子文件夹再移回，路径随动 |
@@ -63,8 +78,10 @@
 | `engine.ironpython` | 引擎行为（实测事实） | L1 | sys.version = CODESYS.exe 3.5.22.20, ScriptEngine.plugin 4.2.0.0（IronPython 2.7） |
 | `cli.verbs` | 命令行 | L2 | cli 冒烟：start/status/devices/call/stop，退出码 0/1/2/3/4 实测 |
 
-## 未打通 / 已证伪（9）
+## 未打通 / 已证伪（11）
 
+- `compare.projects` — project.compare 实测死路：compare_to 需要第二个工程对象，且同进程只能有一个 primary
+- `gui_only_export` — 导出IEC61131-10 / 导出OPC UANodeSet / 计算并导出标准指标 / 目标设置文档导出：execute 返回正常但既无文件也无消息（弹对话框），headless 不可用
 - `online.real_plc` — 真 PLC 走网关：Gateway/软 PLC 是 Manual 服务，仅 SYSTEM/管理员可启动（sc start -> Access denied，DACL 里 IU 无启动权）；仿真路径已全通
 - `doc.export` — project.export_doc 在 --noUI 下静默不写文件（实测），命令直接回 E_UNAVAILABLE
 - `symbol.create` — 本版本 application/device 都没有 create_symbol_configuration（实测 AttributeError）

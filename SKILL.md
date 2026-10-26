@@ -80,6 +80,9 @@ finally:
 | IDE 命令 | **870 条**命令可枚举、可执行（name/guid/tokens） |
 | 库 | **537** 个可用、引用了哪些、`add_library` 真的生效 |
 | 交换 | PLCopenXML 导出 1–2 KB、原生导出 23 KB、整包归档 5.4 MB、运行时 m4 |
+| 对象模型 | GVL / DUT / 接口 / FB / 函数 + 方法/属性/动作；符号配置；文本表（多语言） |
+| 工程 | 工程信息、编译库导出、另存（副本变 primary）、用户/组、完整性检查、I/O 映射 CSV |
+| 任务 | priority / interval / 看门狗（**值必须传字符串**） |
 | 在线 | **仿真全通**：`online.simulation` → `login` → `start/stop` → 读写 → `monitor` 采样 → `logout`；真 PLC 走网关仍需可启动的网关 |
 
 ## 依赖顺序（错一步就静默失败）
@@ -102,6 +105,7 @@ profile 带引号 → 引擎无界面启动 → scriptengine 可用
 
 ## 配方与坑
 
+- 命令全图（832 条 IDE 命令 / 90 族）：内核 `docs/COMMANDS.md` + `recon/commands.json`
 - 配方（照抄的调用序列）：[`references/recipes.md`](references/recipes.md)
 - API 全量目录（50 模块 / 262 类 / 1395 个 def）：内核 `docs/API-SURFACE.md`
   与 `recon/api_catalog.json`（由 `tools/api_inventory.py` 从 stub 生成，可复跑）
@@ -154,10 +158,21 @@ python tools\install_skill.py --check   # 是否已装到 ~/.agents/skills
 | `proj.close` | 工程 | L3 | live_service：close -> {closed: path} |
 | `proj.info` | 工程 | L2 | live_service：application 路径为 /PLC/Plc Logic/Application |
 | `proj.tree` | 工程 | L2 | tree 按 /A/B/C 行走 get_children，段不存在 -> E_STATE |
+| `proj.meta` | 工程 | L2 | live_deep：title/company/version 写入并可回读 |
+| `proj.library` | 工程 | L3 | live_deep：project.meta + export_library -> 4308 B 编译库（缺 company 会被拒） |
+| `proj.save_as` | 工程 | L3 | live_deep：副本变 primary，用文件+改名路径判据（引擎会报『正由…使用』但副本已完整） |
+| `proj.users` | 工程 | L2 | live_deep：列出 Owner/Everyone；创建被 (nobody) 权限拒绝（诚实报 refused） |
+| `proj.integrity` | 工程 | L2 | live_deep：enable_integrity_check 后 false -> true |
+| `proj.iomap` | 工程 | L2 | live_deep：导出 I/O 映射 CSV 235 B |
 | `code.pou_create` | 程序与文本 | L3 | live_service：create_program(language=ImplementationLanguages.st) |
 | `code.pou_read` | 程序与文本 | L2 | live_service：declaration 45 字符回读一致 |
 | `code.pou_write` | 程序与文本 | L3 | live_service：replace(0,len,text) + readback_match=True |
 | `code.tasks` | 程序与文本 | L3 | live_service：task.create/tasks，MainTask 20 ms 绑定 PLC_PRG |
+| `obj.model` | 对象结构 | L3 | live_deep：GVL/DUT/interface/FB/function 全建成功，建完 0 错误 |
+| `obj.members` | 对象结构 | L3 | live_deep：FB 下建 method/property/action，pou.members 回读 3 个 |
+| `obj.member_text` | 对象结构 | L2 | live_deep：方法实现体写入后参与编译且 0 错误 |
+| `sym.config` | 对象结构 | L3 | live_deep：symbols.create -> create_symbol_config(comments, opc_ua, Guid.Empty)；build 后 138 datatypes / 69 signatures |
+| `i18n.textlist` | 对象结构 | L2 | live_deep：textlist.create(zh-CN,en) + add fr -> 3 种语言；export 238 B |
 | `obj.info` | 对象结构 | L2 | live_surface：object.info 返回 name/path/is_folder/has_textual_* /children |
 | `obj.rename` | 对象结构 | L3 | live_surface：rename -> PLC_MAIN 后回读名字一致 |
 | `obj.move` | 对象结构 | L3 | live_surface：move 进子文件夹再移回，路径随动 |
@@ -169,6 +184,9 @@ python tools\install_skill.py --check   # 是否已装到 ~/.agents/skills
 | `build.task_required` | 编译与判据 | L4 | live_service：无任务配置的 bare 工程对同样乱码报 0 错误（假绿灯） |
 | `build.readback` | 编译与判据 | L4 | live_service：close -> open -> 读 implementation 与写入一致 |
 | `build.log_parse` | 编译与判据 | L4 | test_engine_log：解析编译完成 N错误,M警告 与 C 码，丢弃 Text 进度行 |
+| `app.lifecycle` | 编译与判据 | L3 | live_deep：app.clean -> is_uptodate false；app.generate -> true；is_online_change_possible true |
+| `task.timing` | 编译与判据 | L3 | live_deep：task.update priority 1->20、interval 20->10ms（值必须传字符串） |
+| `cmd.map` | IDE 命令通道 | L2 | docs/COMMANDS.md：832 条唯一命令 / 90 族，recon/commands.json 可复跑 |
 | `cmd.list` | IDE 命令通道 | L2 | live_surface：870 条命令，带 name/guid/description/tokens |
 | `cmd.execute` | IDE 命令通道 | L4 | live_surface：execute 重新编译，用引擎 stderr 判据得到 0 错误 |
 | `lib.list` | 库管理 | L2 | live_surface：4 条已引用 + 537 条可用 |
@@ -178,6 +196,7 @@ python tools\install_skill.py --check   # 是否已装到 ~/.agents/skills
 | `xchg.export_native` | 交换与归档 | L2 | live_surface：PLCopen 原生导出 23091 B |
 | `xchg.archive` | 交换与归档 | L2 | live_surface：save_archive 5479773 B |
 | `xchg.runtime` | 交换与归档 | L2 | live_surface：generate_runtime 产出 surfaceItf.m4 |
+| `online.force` | 在线（网关/PLC） | L3 | live_deep：仿真里把 nCounter 钉在 777；unforce 后 790->888 |
 | `online.simulation` | 在线（网关/PLC） | L3 | live_online：set_simulation_mode(True) 后自动分配 SharedMemory 网关 + 地址 0000 |
 | `online.login` | 在线（网关/PLC） | L3 | live_online：login+autostart -> logged_in=true / application_state=run |
 | `online.read` | 在线（网关/PLC） | L2 | live_online：读 PLC_PRG.nCounter 得到 INT#8（随后增长到 68） |

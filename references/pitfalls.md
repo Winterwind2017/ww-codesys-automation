@@ -174,3 +174,33 @@ application.create_program("PLC_PRG", language=scriptengine.ImplementationLangua
 `GatewayService.exe` 当普通进程跑会立刻退出（它要先 `StartServiceCtrlDispatcher`）。
 **所以不要在这条路上耗**：用 `device.set_simulation_mode(True)` 的仿真路径，
 登录/下载/读写/监控全都能跑，而且不需要任何提权。
+
+
+## 18. 模板被"切片拼接"复制三份，新改动被旧副本覆盖
+
+**现象**：明明改了 `cmd_project_save_as`，服务跑起来还是老行为（`E_SCRIPT` + 旧的那句
+『所选工程当前正由…使用』），日志里指向 `server.py` 第 3088 行；而源文件里那段在 1264 行。
+
+**原因**：用 `s[:start] + NEW + s[end:]` 改模板时，`end` 取到的是**在前面的** `def cmd_build`，于是
+`s[end:]` 把整段又接了一遍 —— 模板长成 3584 行 / 159 个 `def` / 45 个重名，后定义覆盖前定义。
+
+**修法**：从干净基线（`git show <commit>:agentscript.py`）重建，并在 `selfcheck` 加硬门禁
+「禁止重复 `cmd_*` 定义」（现在 1778 行 / 69 命令 / 0 重名）。**教训：改长模板后必须查重名。**
+
+## 19. `save_as` 成功但会报"工程正被使用"
+
+`project.save_as(path)` 实际**已经**生成副本并把当前工程改名到新路径，紧接着去
+`PROJECTS.open(新路径)` 或访问 `projects.primary` 会抛
+`所选工程当前正由'<user>'上的'<machine>'使用`（残留 claim 文件 `.~u`/`.opt`）。
+判据应改成：**文件存在 + 大小 > 0 + `project.path` 已等于新路径**，而不是看有没有异常。
+
+## 20. 有些命令"执行成功"但什么都没做（GUI-only）
+
+`导出IEC61131-10...`、`导出OPC UANodeSet`、`计算并导出标准指标`、`目标设置文档导出`
+在 `--noUI` 下 `execute` 返回正常，**既不写文件也不产生消息**——它们要弹文件对话框。
+所以 `execute` 的返回值永远不能当判据，必须看产物（文件/大小/编译日志/回读值）。
+
+## 21. 任务参数只收字符串；看门狗没时间会编译失败
+
+`task.priority = 20` → `TypeError: expected str, got int`；`"20"` 可以。
+只把 `watchdog.enabled` 打开、不设 `watchdog.time`，编译直接报 `MainTask: 无效的看门狗时间`。

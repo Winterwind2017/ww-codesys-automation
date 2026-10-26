@@ -43,6 +43,16 @@
 - [ ] `monitor` 的采样数 = 请求数，且值随时间变化
 - [ ] 退出前 `logout()` + `simulation(False)`，别把设备留在仿真态
 
+## D4. 无 PLC 时还能挖的（都已验证）
+
+- [ ] 建对象用 `pou.create_typed`（program/function/fb/gvl/dut/interface），成员用 `pou.member`
+- [ ] 建完**必须编译**：0 错误才算真建成（模板写错照样能"创建成功"）
+- [ ] 符号配置用 `symbols.create`；一个应用只能有一个
+- [ ] 任务参数传字符串；动看门狗必须同时给时间
+- [ ] 出编译库前先写 `project.meta`，**company 不能空**
+- [ ] `save_as` 判据看文件 + `is_primary`，别被"正被使用"的报错误导
+- [ ] 声称"执行成功"的 GUI 命令要查产物，没产物就是没做
+
 ## E. 交付物
 
 - [ ] `project.save()` 后 `dirty: false`
