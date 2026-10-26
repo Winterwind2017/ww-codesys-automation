@@ -159,3 +159,24 @@ client.import_xml(r"D:\work\plc.xml")                       # 只对空工程可
 ```
 
 判据：文件存在且 `size > 0`；`import.xml` 看 `children_after > children_before`。
+
+
+## 14. 在线：登录 / 下载 / 监控（用仿真，不需要网关、不需要管理员）
+
+```python
+client.online_simulation(True)                 # 设备对象自带仿真开关，网关自动分配
+client.online_login(autostart=True)            # logged_in / application_state=run
+client.online_read("PLC_PRG.nCounter")         # "INT#8"
+client.online_write("PLC_PRG.nCounter", "1000")
+client.online_monitor(expression="PLC_PRG.nCounter", samples=5, interval_ms=300)
+# [{...'INT#1016'}, 1036, 1056, 1076, 1096]  <- 周期任务在跑
+client.online_stop(); client.online_start()
+client.online_download()                        # login(update) + create_boot_application
+client.online_logout(); client.online_simulation(False)
+```
+
+判据（三条都要）：① 读两次同一个变量，第二次**变大**（任务真在跑）；② 写 1000 读回 ≥1000；
+③ `stop` 后 `application_state == "stop"`。只看 `logged_in` 会漏掉"登录了但程序没跑"。
+
+真 PLC 的话把 `simulation=False`，并在设备通信设置里指向一个**已启动**的网关：
+`device.set_gateway_and_address(<网关 guid>, "192.168.1.10")`（IP 会被规范成 `0127.0000.0000.0001` 这种形式）。

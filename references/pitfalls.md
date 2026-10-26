@@ -150,3 +150,27 @@ application.create_program("PLC_PRG", language=scriptengine.ImplementationLangua
 
 大回复（870 条命令的列表）会被截断，客户端永远等不到换行。必须
 `while sent < total: sent += sock.Send(buf, sent, total - sent, flags)`。
+
+
+## 15. 每次读都重新登录 = 每次都在下载（值全归零）
+
+**现象**：login 成功、`application_state=run`，但连着读两次 `nCounter` 都是 `0`，看起来"任务没跑"。
+
+**原因**：`create_online_application()` + `login()` 不是"连接"那么简单——应用有变化时它就是一次
+**增量下载**，程序重启、变量回到初值。我的第一版每条命令都重新建会话，于是每次读都把计数器清零。
+
+**修法**：每个工程只建**一个** `OnlineApplication` 并缓存，只在 `is_logged_in` 为假时才登录
+（内核里是 `ONLINE` 字典）。修好后 1.2 s 内 `8 -> 68`。
+
+## 16. `set_prepared_value` 只收字符串
+
+`online_app.set_prepared_value("PLC_PRG.nCounter", 42)` → `TypeError: expected str, got int`。
+传 `"42"` 即可；内核的 `online.write` 统一 `unicode(value)`。
+
+## 17. 网关服务：不是"没装"，是"没权限启"
+
+`CODESYS Gateway V3` / `CODESYS Control Win V3 - x64` 都是 `Manual` 服务，`sc start` 报
+`Access is denied`（服务 DACL 里 `IU` 只有 `CCLCSWLOCRRC`，没有启动权）；直接把
+`GatewayService.exe` 当普通进程跑会立刻退出（它要先 `StartServiceCtrlDispatcher`）。
+**所以不要在这条路上耗**：用 `device.set_simulation_mode(True)` 的仿真路径，
+登录/下载/读写/监控全都能跑，而且不需要任何提权。

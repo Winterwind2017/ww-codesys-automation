@@ -99,9 +99,16 @@ CAPS: dict[str, tuple[str, str, str]] = {
     "xchg.export_native": ("xchg", "L2", "live_surface：PLCopen 原生导出 23091 B"),
     "xchg.archive": ("xchg", "L2", "live_surface：save_archive 5479773 B"),
     "xchg.runtime": ("xchg", "L2", "live_surface：generate_runtime 产出 surfaceItf.m4"),
-    # ---- 在线 ----
-    "online.state": ("online", "L2", "live_surface：无目标时 logged_in=false / state=none"),
-    "online.failure_path": ("online", "L2", "live_surface：online.login 返回引擎原文 E_CODESYS（网关未配置）"),
+    # ---- 在线（仿真：不需要网关服务） ----
+    "online.simulation": ("online", "L3", "live_online：set_simulation_mode(True) 后自动分配 SharedMemory 网关 + 地址 0000"),
+    "online.login": ("online", "L3", "live_online：login+autostart -> logged_in=true / application_state=run"),
+    "online.read": ("online", "L2", "live_online：读 PLC_PRG.nCounter 得到 INT#8（随后增长到 68）"),
+    "online.write": ("online", "L3", "live_online：写 1000，读回 1007（写生效后被任务继续累加）"),
+    "online.monitor": ("online", "L2", "live_online：5×300ms 采样 1016/1036/1056/1076/1096"),
+    "online.start_stop": ("online", "L3", "live_online：stop -> state=stop，start -> state=run"),
+    "online.download": ("online", "L3", "live_online：login(change=update)+create_boot_application 返回 True"),
+    "online.logout": ("online", "L2", "live_online：logout 后 logged_in=false"),
+    "online.failure_path": ("online", "L2", "live_online：关掉仿真后 login 诚实返回 E_CODESYS"),
     # ---- 引擎行为 ----
     "engine.headless": ("engine", "L2", "live_service：ui_present=False，全程无窗口"),
     "engine.profile_quoting": ("engine", "L2", "实测：--profile 必须带字面引号，否则退出 1 并提示 --noUI 模式"),
@@ -112,13 +119,15 @@ CAPS: dict[str, tuple[str, str, str]] = {
 
 # 还没打通 / 已证伪（技能里"别试这些"用）
 PENDING = [
-    ("online.login", "ScriptOnline 19 类 112 方法，但需要可达的 PLC 或本地软 PLC，未实测"),
-    ("online.download", "下载/RUN-STOP 同理，需要目标 PLC"),
-    ("monitor.live", "在线读变量需要登录成功后才有值"),
-    ("lib.manage", "LibManager 74 方法未验证；客户工程的库版本是单独问题"),
+    ("online.real_plc",
+     "真 PLC 走网关：Gateway/软 PLC 是 Manual 服务，仅 SYSTEM/管理员可启动"
+     "（sc start -> Access denied，DACL 里 IU 无启动权）；仿真路径已全通"),
+    ("doc.export", "project.export_doc 在 --noUI 下静默不写文件（实测），命令直接回 E_UNAVAILABLE"),
+    ("symbol.create", "本版本 application/device 都没有 create_symbol_configuration（实测 AttributeError）"),
+    ("lib.export_compiled", "save_as_compiled_library 需要工程信息（实测『未发现工程信息』）"),
+    ("lib.manage", "LibManager 74 方法未全验证；客户工程的库版本是单独问题"),
     ("pkg.manage", "PackageManagerCLI/IPMCLI 可跑但未验证装包对设备仓库的影响"),
     ("trace.configure", "ScriptTraceObject/可视化资源存在，没有实测配方"),
-    ("archive.exchange", "save_archive/export_xml/import_xml 未实测"),
     ("com.register",
      "已证伪：ScriptEngine3.dll 只有 3 个 attribute/exception 类可注册，_3S.CoDeSys* 注册表 0 命中"),
     ("exec.arbitrary", "exec 命令在引擎内跑任意 IronPython，默认关闭，需 --allow-exec"),

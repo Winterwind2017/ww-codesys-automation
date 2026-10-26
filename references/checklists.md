@@ -34,6 +34,15 @@
 - [ ] 导出的文件 `size > 0`；`import.xml` 只在**空工程**上可靠
 - [ ] `online.*` 之前确认 `online.state` 与网关状态；无网关时不要把它当成功
 
+## D3. 在线（仿真即可）
+
+- [ ] `online_simulation(True)` 后 `gateway` 不再是 `00000000-…`、`address` 有值
+- [ ] 登录后 `application_state == "run"`（不是只看 `logged_in`）
+- [ ] **读两次**同一变量，第二次更大（证明周期任务在跑）
+- [ ] 写完立刻读回，值符合预期（注意任务还会继续改它）
+- [ ] `monitor` 的采样数 = 请求数，且值随时间变化
+- [ ] 退出前 `logout()` + `simulation(False)`，别把设备留在仿真态
+
 ## E. 交付物
 
 - [ ] `project.save()` 后 `dirty: false`

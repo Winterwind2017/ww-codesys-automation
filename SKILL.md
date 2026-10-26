@@ -7,7 +7,7 @@ description: >
   管库（537 个可用库）、导出/导入 XML 或 PLCopen 原生格式、整包归档、生成运行时文件、
   跑任意 IDE 命令，或问"CODESYS 能不能被脚本/agent 驱动、COM 能不能注册、怎么常驻调用、
   在线登录为什么失败"时使用。内含实测配方、判据、已证伪路径，以及这台引擎特有的坑
-  （必须建任务才真编译、编译诊断只在 stderr、--profile 必须带引号、doc.text 只读、
+  （必须建任务才真编译、编译诊断只在 stderr、--profile 必须带引号、ScriptTextDocument.text 只读、
   print 污染消息列表、UTF-8 传输与路径 identity 的坑）。英文路由：headless CODESYS 3.5
   automation, project/POU/task creation, ST read-write, compile diagnostics from stderr,
   IDE command channel, library management, PLCopenXML/archive exchange, resident service.
@@ -29,7 +29,7 @@ CODESYS 3.5 是**天生可编程**的（`--noUI --runscript` + IronPython 脚本
   也是 0 错误。真编译后同一份代码报 12 个错误。
 - 编译诊断**不在** `system.get_messages()` 里（恒为 0 条），只出现在进程 **stderr**。
 - `create_program(name)` 的默认语言不是 ST，写进 `textual_implementation` 的文本不参与编译。
-- `doc.text` 只读，写要 `replace(offset, length, text)`；`remove` 的参数是 `(offset, length)`。
+- `ScriptTextDocument.text` 只读，写要 `replace(offset, length, text)`；`remove` 的参数是 `(offset, length)`。
 - `--noUI` 下 `print()` 会进 IDE 消息列表，把自己的日志和编译消息混在一起。
 - `--profile` 的值**必须带字面引号**，否则进程直接退出 1。
 - 回复里的中文曾经直接**断连**（按字符码写 `Byte[]`，`Cannot convert int(36333) to Byte`），
@@ -80,7 +80,7 @@ finally:
 | IDE 命令 | **870 条**命令可枚举、可执行（name/guid/tokens） |
 | 库 | **537** 个可用、引用了哪些、`add_library` 真的生效 |
 | 交换 | PLCopenXML 导出 1–2 KB、原生导出 23 KB、整包归档 5.4 MB、运行时 m4 |
-| 在线 | `online.state` 可用；`login` 在无网关时给出引擎原文错误 |
+| 在线 | **仿真全通**：`online.simulation` → `login` → `start/stop` → 读写 → `monitor` 采样 → `logout`；真 PLC 走网关仍需可启动的网关 |
 
 ## 依赖顺序（错一步就静默失败）
 
@@ -115,7 +115,7 @@ profile 带引号 → 引擎无界面启动 → scriptengine 可用
 - 需要改客户桌面上的 GUI 时：不要。引擎已经无界面可脚本化。
 
 <!-- allow:pending:BEGIN -->
-- `online.login` / `online.download` / `monitor.live`：还没打通，需要可达的 PLC 或本地软 PLC；
+- `online.real_plc`：真 PLC 走网关需要能启动网关服务（本机仅 SYSTEM/管理员可启动）；仿真路径已通；
 - `com.register`：已证伪（没有可注册的引擎类），别再写注册表；
 - `lib.manage` / `pkg.manage` / `trace.configure` / `archive.exchange`：API 存在但没有实测配方；
 - `exec.arbitrary`：默认关闭，需要 `--allow-exec`。
@@ -178,8 +178,15 @@ python tools\install_skill.py --check   # 是否已装到 ~/.agents/skills
 | `xchg.export_native` | 交换与归档 | L2 | live_surface：PLCopen 原生导出 23091 B |
 | `xchg.archive` | 交换与归档 | L2 | live_surface：save_archive 5479773 B |
 | `xchg.runtime` | 交换与归档 | L2 | live_surface：generate_runtime 产出 surfaceItf.m4 |
-| `online.state` | 在线（网关/PLC） | L2 | live_surface：无目标时 logged_in=false / state=none |
-| `online.failure_path` | 在线（网关/PLC） | L2 | live_surface：online.login 返回引擎原文 E_CODESYS（网关未配置） |
+| `online.simulation` | 在线（网关/PLC） | L3 | live_online：set_simulation_mode(True) 后自动分配 SharedMemory 网关 + 地址 0000 |
+| `online.login` | 在线（网关/PLC） | L3 | live_online：login+autostart -> logged_in=true / application_state=run |
+| `online.read` | 在线（网关/PLC） | L2 | live_online：读 PLC_PRG.nCounter 得到 INT#8（随后增长到 68） |
+| `online.write` | 在线（网关/PLC） | L3 | live_online：写 1000，读回 1007（写生效后被任务继续累加） |
+| `online.monitor` | 在线（网关/PLC） | L2 | live_online：5×300ms 采样 1016/1036/1056/1076/1096 |
+| `online.start_stop` | 在线（网关/PLC） | L3 | live_online：stop -> state=stop，start -> state=run |
+| `online.download` | 在线（网关/PLC） | L3 | live_online：login(change=update)+create_boot_application 返回 True |
+| `online.logout` | 在线（网关/PLC） | L2 | live_online：logout 后 logged_in=false |
+| `online.failure_path` | 在线（网关/PLC） | L2 | live_online：关掉仿真后 login 诚实返回 E_CODESYS |
 | `engine.headless` | 引擎行为（实测事实） | L2 | live_service：ui_present=False，全程无窗口 |
 | `engine.profile_quoting` | 引擎行为（实测事实） | L2 | 实测：--profile 必须带字面引号，否则退出 1 并提示 --noUI 模式 |
 | `engine.ironpython` | 引擎行为（实测事实） | L1 | sys.version = CODESYS.exe 3.5.22.20, ScriptEngine.plugin 4.2.0.0（IronPython 2.7） |
