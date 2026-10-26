@@ -1,0 +1,166 @@
+{
+  "schema": 1,
+  "generated_at": "2026-10-26T14:16:53",
+  "provenance": {
+    "kernel": "codesyskit",
+    "kernel_repo": "https://github.com/Winterwind2017/codesyskit",
+    "kernel_commit": "9fd6c4a",
+    "engine": "CODESYS Development System 3.5.22.20 (ScriptEngine.plugin 4.2.0.0)"
+  },
+  "cli_commands": [
+    "batch",
+    "call",
+    "devices",
+    "ping",
+    "run",
+    "server-script",
+    "start",
+    "status",
+    "stop"
+  ],
+  "counts": {
+    "verified": 32,
+    "families": 7,
+    "pending": 9
+  },
+  "verified": {
+    "svc.start": "svc",
+    "svc.stop": "svc",
+    "svc.status": "svc",
+    "svc.token": "svc",
+    "svc.timeout": "svc",
+    "svc.batch": "svc",
+    "svc.errors": "svc",
+    "svc.random_port": "svc",
+    "svc.one_request": "svc",
+    "dev.list": "dev",
+    "dev.filter": "dev",
+    "proj.create": "proj",
+    "proj.create_bare": "proj",
+    "proj.open": "proj",
+    "proj.save": "proj",
+    "proj.close": "proj",
+    "proj.info": "proj",
+    "proj.tree": "proj",
+    "code.pou_create": "code",
+    "code.pou_read": "code",
+    "code.pou_write": "code",
+    "code.tasks": "code",
+    "build.compile": "build",
+    "build.diagnostics": "build",
+    "build.restore": "build",
+    "build.task_required": "build",
+    "build.readback": "build",
+    "build.log_parse": "build",
+    "engine.headless": "engine",
+    "engine.profile_quoting": "engine",
+    "engine.ironpython": "engine",
+    "cli.verbs": "cli"
+  },
+  "levels": {
+    "svc.start": "L2",
+    "svc.stop": "L2",
+    "svc.status": "L2",
+    "svc.token": "L2",
+    "svc.timeout": "L2",
+    "svc.batch": "L2",
+    "svc.errors": "L2",
+    "svc.random_port": "L2",
+    "svc.one_request": "L2",
+    "dev.list": "L1",
+    "dev.filter": "L1",
+    "proj.create": "L3",
+    "proj.create_bare": "L3",
+    "proj.open": "L3",
+    "proj.save": "L3",
+    "proj.close": "L3",
+    "proj.info": "L2",
+    "proj.tree": "L2",
+    "code.pou_create": "L3",
+    "code.pou_read": "L2",
+    "code.pou_write": "L3",
+    "code.tasks": "L3",
+    "build.compile": "L4",
+    "build.diagnostics": "L4",
+    "build.restore": "L4",
+    "build.task_required": "L4",
+    "build.readback": "L4",
+    "build.log_parse": "L4",
+    "engine.headless": "L2",
+    "engine.profile_quoting": "L2",
+    "engine.ironpython": "L1",
+    "cli.verbs": "L2"
+  },
+  "evidence": {
+    "svc.start": "live_service：service.start 7.3 s，返回 ping 成功后的 state",
+    "svc.stop": "live_service：quit 后 1.2 s 退出；残留 taskkill 兜底",
+    "svc.status": "cli：status 在无服务时退出码 2",
+    "svc.token": "live_service + test_client：错 token -> E_TOKEN，先于命令查找",
+    "svc.timeout": "test_client：0.5 s 超时对 3 s 慢命令 -> E_TIMEOUT 且提前返回",
+    "svc.batch": "live_service + test_client：逐条 ok/code，部分失败不丢",
+    "svc.errors": "errors.ALL 11 个码封闭集合，test_protocol 校验唯一性",
+    "svc.random_port": "port=0 由引擎选端口并写入 service.json（实测 64054 等）",
+    "svc.one_request": "一连接一请求：keep-alive 会饿死第二个客户端（实测 10 s 超时）",
+    "dev.list": "live_service：get_all_devices 1562 条",
+    "dev.filter": "live_service：filter=CODESYS Control Win V3 命中 2 条",
+    "proj.create": "live_service：project.create(+device+task) 3.6 s，返回 program/task 路径",
+    "proj.create_bare": "project.create(bare=True) 只加设备，不建 POU/任务",
+    "proj.open": "live_service：projects.open 重开同一工程",
+    "proj.save": "live_service：save 后 dirty=False",
+    "proj.close": "live_service：close -> {closed: path}",
+    "proj.info": "live_service：application 路径为 /PLC/Plc Logic/Application",
+    "proj.tree": "tree 按 /A/B/C 行走 get_children，段不存在 -> E_STATE",
+    "code.pou_create": "live_service：create_program(language=ImplementationLanguages.st)",
+    "code.pou_read": "live_service：declaration 45 字符回读一致",
+    "code.pou_write": "live_service：replace(0,len,text) + readback_match=True",
+    "code.tasks": "live_service：task.create/tasks，MainTask 20 ms 绑定 PLC_PRG",
+    "build.compile": "live_service：合法 ST -> 0 错误（Service.compile）",
+    "build.diagnostics": "live_service：写坏代码 -> 12 错误 2 警告，码 C189/C139/C9/C190",
+    "build.restore": "live_service：改回合法代码 -> 重新 0 错误（可来回）",
+    "build.task_required": "live_service：无任务配置的 bare 工程对同样乱码报 0 错误（假绿灯）",
+    "build.readback": "live_service：close -> open -> 读 implementation 与写入一致",
+    "build.log_parse": "test_engine_log：解析编译完成 N错误,M警告 与 C 码，丢弃 Text 进度行",
+    "engine.headless": "live_service：ui_present=False，全程无窗口",
+    "engine.profile_quoting": "实测：--profile 必须带字面引号，否则退出 1 并提示 --noUI 模式",
+    "engine.ironpython": "sys.version = CODESYS.exe 3.5.22.20, ScriptEngine.plugin 4.2.0.0（IronPython 2.7）",
+    "cli.verbs": "cli 冒烟：start/status/devices/call/stop，退出码 0/1/2/3/4 实测"
+  },
+  "pending": [
+    {
+      "id": "online.login",
+      "reason": "ScriptOnline 19 类 112 方法，但需要可达的 PLC 或本地软 PLC，未实测"
+    },
+    {
+      "id": "online.download",
+      "reason": "下载/RUN-STOP 同理，需要目标 PLC"
+    },
+    {
+      "id": "monitor.live",
+      "reason": "在线读变量需要登录成功后才有值"
+    },
+    {
+      "id": "lib.manage",
+      "reason": "LibManager 74 方法未验证；客户工程的库版本是单独问题"
+    },
+    {
+      "id": "pkg.manage",
+      "reason": "PackageManagerCLI/IPMCLI 可跑但未验证装包对设备仓库的影响"
+    },
+    {
+      "id": "trace.configure",
+      "reason": "ScriptTraceObject/可视化资源存在，没有实测配方"
+    },
+    {
+      "id": "archive.exchange",
+      "reason": "save_archive/export_xml/import_xml 未实测"
+    },
+    {
+      "id": "com.register",
+      "reason": "已证伪：ScriptEngine3.dll 只有 3 个 attribute/exception 类可注册，_3S.CoDeSys* 注册表 0 命中"
+    },
+    {
+      "id": "exec.arbitrary",
+      "reason": "exec 命令在引擎内跑任意 IronPython，默认关闭，需 --allow-exec"
+    }
+  ]
+}
