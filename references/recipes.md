@@ -106,3 +106,56 @@ codesyskit status --state-dir D:\shared\codesys   # 端口与 token 在 service.
 
 别的语言直接按 `docs/PROTOCOL.md` 发一行 JSON 即可（token 在同一文件里）。
 `service.json` 就是凭据，按密钥对待。
+
+
+## 9. 跑一条 IDE 命令（GUI 能做的都能做）
+
+```python
+listing = client.commands(filter="下载", limit=10)      # 先看名字与 tokens
+result = service.run_command(client, "重新编译")        # 用引擎 stderr 判据
+assert result["errors"] == 0, result["messages"][:3]
+client.execute(guid="50dc8f97-9e21-4b15-a504-ea2549ab61e0")   # 名字会随语言变，guid 稳
+```
+
+命令名是本地化的（这台是中文）；要跨语言稳，用 `guid` 或 `tokens`。
+
+## 10. 全文搜索
+
+```python
+hits = client.find("nCounter", limit=50)
+# {"count": 3, "items": [{"path": "/PLC/Plc Logic/Application/PLC_PRG",
+#                         "part": "declaration", "line": 3, "text": "\tnCounter : INT;"}]}
+```
+
+搜索范围是对象的声明/实现文本（不是文件系统）；`part` 可选 `declaration`/`implementation`。
+
+## 11. 改对象结构（改名/移动/删除/建文件夹）
+
+```python
+folder = client.mkdir("Records", "/PLC/Plc Logic/Application")["path"]
+moved = client.move(pou, folder, -1)["path"]        # 用返回的新路径继续
+client.rename(moved, "PRG_Records")
+client.delete(folder)                              # 空文件夹
+```
+
+每次都**用返回值里的 path**，不要复用旧路径（对象位置变了）。工程根不可改名/删除/移动。
+
+## 12. 库
+
+```python
+libs = client.libraries()        # {"referenced": [...4], "available_count": 537}
+client.add_library("Standard")   # 立刻出现在 referenced 里
+```
+
+## 13. 交换：XML / 原生 / 归档 / 运行时文件
+
+```python
+client.export_xml(r"D:\work\app.xml")                       # 默认导出活动应用
+client.export_xml(r"D:\work\plc.xml", target="/PLC")        # 导出设备子树
+client.export_native(r"D:\work\app.plcopen")                # PLCopen 原生
+client.archive(r"D:\work\job.projectarchive")               # 整包（几 MB）
+client.generate_runtime(r"D:\work\rtsys")                   # 产出 *.m4
+client.import_xml(r"D:\work\plc.xml")                       # 只对空工程可靠
+```
+
+判据：文件存在且 `size > 0`；`import.xml` 看 `children_after > children_before`。

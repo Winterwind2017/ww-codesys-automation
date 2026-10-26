@@ -121,3 +121,32 @@ application.create_program("PLC_PRG", language=scriptengine.ImplementationLangua
 - `--port 0` 让引擎自选端口并写入 `service.json`，多开互不冲突；
 - 同一 `--state-dir` 只能有一个服务（第二个 `start` 报 `E_STATE`）；
 - 引擎单线程，慢命令（`build`）会阻塞后续请求，客户端超时要按最慢命令配。
+
+
+## 12. 中文回复会把连接打断（已修，但要知道）
+
+**现象**：任何含中文的回复到达客户端前，服务端日志出现
+`connection error: Cannot convert int(36333) to Byte`，客户端只看到
+`E_PROTOCOL: service closed the connection`。
+
+**原因**：回复按字符码逐字节写进 `Byte[]`（`ord('中')=20013 > 255`），请求也是按字符拼的。
+
+**修法**：`Encoding.UTF8.GetBytes(text)` + 循环 `Send`；请求按字节累积后 `.decode("utf-8")`。
+判据：把 `(* 中文注释 *)` 写进 POU 再读回，必须逐字相等。
+
+## 13. 路径不能靠"对象是不是同一个"来判断
+
+**现象**：`mkdir` 返回 `{"path": "/"}`，接着 `move(pou, "/")` 把 POU 搬到了工程根；
+`delete("/")` 又去删工程根，报 `'ScriptProject' object has no attribute 'remove'`。
+
+**原因**：引擎每次调用都返回新的 wrapper 对象，`node is project` 永远为假；而 `create_folder`
+返回的对象**还没有名字**，`path_of` 立刻就在第一步 break 成 `/`。
+
+**修法**：路径只按**名字**沿 parent 链构建，遇到**无名的工程根**停下；`create_folder` 的路径
+由「父路径 + 名字」算出来再回走校验；改名/删除/移动**拒绝**解析到工程根。
+改动后 `live_surface` 的 move/rename/delete 往返用例一次通过。
+
+## 14. `Socket.Send` 不保证一次发完
+
+大回复（870 条命令的列表）会被截断，客户端永远等不到换行。必须
+`while sent < total: sent += sock.Send(buf, sent, total - sent, flags)`。

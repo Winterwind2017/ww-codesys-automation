@@ -1,8 +1,8 @@
 # 能力清单（快照）
 
-由 `tools/sync_capabilities.py` 从内核生成；出处 `codesyskit@9fd6c4a`。
+由 `tools/sync_capabilities.py` 从内核生成；出处 `codesyskit@86896f4`。
 
-## 已打通（32）
+## 已打通（49）
 
 | 能力 | 族 | 级别 | 证据 |
 | --- | --- | --- | --- |
@@ -15,6 +15,7 @@
 | `svc.errors` | 常驻服务（进程/协议） | L2 | errors.ALL 11 个码封闭集合，test_protocol 校验唯一性 |
 | `svc.random_port` | 常驻服务（进程/协议） | L2 | port=0 由引擎选端口并写入 service.json（实测 64054 等） |
 | `svc.one_request` | 常驻服务（进程/协议） | L2 | 一连接一请求：keep-alive 会饿死第二个客户端（实测 10 s 超时） |
+| `svc.utf8` | 常驻服务（进程/协议） | L2 | live_surface：中文注释写入并逐字读回（修掉 Byte 溢出断连） |
 | `dev.list` | 设备仓库 | L1 | live_service：get_all_devices 1562 条 |
 | `dev.filter` | 设备仓库 | L1 | live_service：filter=CODESYS Control Win V3 命中 2 条 |
 | `proj.create` | 工程 | L3 | live_service：project.create(+device+task) 3.6 s，返回 program/task 路径 |
@@ -34,6 +35,22 @@
 | `build.task_required` | 编译与判据 | L4 | live_service：无任务配置的 bare 工程对同样乱码报 0 错误（假绿灯） |
 | `build.readback` | 编译与判据 | L4 | live_service：close -> open -> 读 implementation 与写入一致 |
 | `build.log_parse` | 编译与判据 | L4 | test_engine_log：解析编译完成 N错误,M警告 与 C 码，丢弃 Text 进度行 |
+| `obj.info` | 对象结构 | L2 | live_surface：object.info 返回 name/path/is_folder/has_textual_* /children |
+| `obj.rename` | 对象结构 | L3 | live_surface：rename -> PLC_MAIN 后回读名字一致 |
+| `obj.move` | 对象结构 | L3 | live_surface：move 进子文件夹再移回，路径随动 |
+| `obj.delete` | 对象结构 | L3 | live_surface：删除空文件夹；改删/改移工程根会被拒 |
+| `obj.folder_create` | 对象结构 | L3 | live_surface：create_folder 后路径由父路径+名字算出并回走校验 |
+| `cmd.list` | IDE 命令通道 | L2 | live_surface：870 条命令，带 name/guid/description/tokens |
+| `cmd.execute` | IDE 命令通道 | L4 | live_surface：execute 重新编译，用引擎 stderr 判据得到 0 错误 |
+| `lib.list` | 库管理 | L2 | live_surface：4 条已引用 + 537 条可用 |
+| `lib.add` | 库管理 | L3 | live_surface：add_library(Standard) 后引用表里出现 Standard |
+| `xchg.export_xml` | 交换与归档 | L2 | live_surface：应用 1095 B / 设备子树 1988 B |
+| `xchg.import_xml` | 交换与归档 | L3 | live_surface：设备子树导入空工程，children 2 -> 3 |
+| `xchg.export_native` | 交换与归档 | L2 | live_surface：PLCopen 原生导出 23091 B |
+| `xchg.archive` | 交换与归档 | L2 | live_surface：save_archive 5479773 B |
+| `xchg.runtime` | 交换与归档 | L2 | live_surface：generate_runtime 产出 surfaceItf.m4 |
+| `online.state` | 在线（网关/PLC） | L2 | live_surface：无目标时 logged_in=false / state=none |
+| `online.failure_path` | 在线（网关/PLC） | L2 | live_surface：online.login 返回引擎原文 E_CODESYS（网关未配置） |
 | `engine.headless` | 引擎行为（实测事实） | L2 | live_service：ui_present=False，全程无窗口 |
 | `engine.profile_quoting` | 引擎行为（实测事实） | L2 | 实测：--profile 必须带字面引号，否则退出 1 并提示 --noUI 模式 |
 | `engine.ironpython` | 引擎行为（实测事实） | L1 | sys.version = CODESYS.exe 3.5.22.20, ScriptEngine.plugin 4.2.0.0（IronPython 2.7） |

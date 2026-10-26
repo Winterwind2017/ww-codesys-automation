@@ -34,7 +34,12 @@ FAMILY_LABEL = {
     "dev": "设备仓库",
     "proj": "工程",
     "code": "程序与文本",
+    "obj": "对象结构",
     "build": "编译与判据",
+    "cmd": "IDE 命令通道",
+    "lib": "库管理",
+    "xchg": "交换与归档",
+    "online": "在线（网关/PLC）",
     "engine": "引擎行为（实测事实）",
     "cli": "命令行",
 }
@@ -52,6 +57,7 @@ CAPS: dict[str, tuple[str, str, str]] = {
     "svc.errors": ("svc", "L2", "errors.ALL 11 个码封闭集合，test_protocol 校验唯一性"),
     "svc.random_port": ("svc", "L2", "port=0 由引擎选端口并写入 service.json（实测 64054 等）"),
     "svc.one_request": ("svc", "L2", "一连接一请求：keep-alive 会饿死第二个客户端（实测 10 s 超时）"),
+    "svc.utf8": ("svc", "L2", "live_surface：中文注释写入并逐字读回（修掉 Byte 溢出断连）"),
     # ---- 设备仓库 ----
     "dev.list": ("dev", "L1", "live_service：get_all_devices 1562 条"),
     "dev.filter": ("dev", "L1", "live_service：filter=CODESYS Control Win V3 命中 2 条"),
@@ -75,6 +81,27 @@ CAPS: dict[str, tuple[str, str, str]] = {
     "build.task_required": ("build", "L4", "live_service：无任务配置的 bare 工程对同样乱码报 0 错误（假绿灯）"),
     "build.readback": ("build", "L4", "live_service：close -> open -> 读 implementation 与写入一致"),
     "build.log_parse": ("build", "L4", "test_engine_log：解析编译完成 N错误,M警告 与 C 码，丢弃 Text 进度行"),
+    # ---- 对象结构 ----
+    "obj.info": ("obj", "L2", "live_surface：object.info 返回 name/path/is_folder/has_textual_* /children"),
+    "obj.rename": ("obj", "L3", "live_surface：rename -> PLC_MAIN 后回读名字一致"),
+    "obj.move": ("obj", "L3", "live_surface：move 进子文件夹再移回，路径随动"),
+    "obj.delete": ("obj", "L3", "live_surface：删除空文件夹；改删/改移工程根会被拒"),
+    "obj.folder_create": ("obj", "L3", "live_surface：create_folder 后路径由父路径+名字算出并回走校验"),
+    # ---- IDE 命令通道 ----
+    "cmd.list": ("cmd", "L2", "live_surface：870 条命令，带 name/guid/description/tokens"),
+    "cmd.execute": ("cmd", "L4", "live_surface：execute 重新编译，用引擎 stderr 判据得到 0 错误"),
+    # ---- 库管理 ----
+    "lib.list": ("lib", "L2", "live_surface：4 条已引用 + 537 条可用"),
+    "lib.add": ("lib", "L3", "live_surface：add_library(Standard) 后引用表里出现 Standard"),
+    # ---- 交换与归档 ----
+    "xchg.export_xml": ("xchg", "L2", "live_surface：应用 1095 B / 设备子树 1988 B"),
+    "xchg.import_xml": ("xchg", "L3", "live_surface：设备子树导入空工程，children 2 -> 3"),
+    "xchg.export_native": ("xchg", "L2", "live_surface：PLCopen 原生导出 23091 B"),
+    "xchg.archive": ("xchg", "L2", "live_surface：save_archive 5479773 B"),
+    "xchg.runtime": ("xchg", "L2", "live_surface：generate_runtime 产出 surfaceItf.m4"),
+    # ---- 在线 ----
+    "online.state": ("online", "L2", "live_surface：无目标时 logged_in=false / state=none"),
+    "online.failure_path": ("online", "L2", "live_surface：online.login 返回引擎原文 E_CODESYS（网关未配置）"),
     # ---- 引擎行为 ----
     "engine.headless": ("engine", "L2", "live_service：ui_present=False，全程无窗口"),
     "engine.profile_quoting": ("engine", "L2", "实测：--profile 必须带字面引号，否则退出 1 并提示 --noUI 模式"),
