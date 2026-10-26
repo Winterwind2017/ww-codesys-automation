@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "generated_at": "2026-10-26T15:41:07",
+  "generated_at": "2026-10-26T16:04:34",
   "provenance": {
     "kernel": "codesyskit",
     "kernel_repo": "https://github.com/Winterwind2017/codesyskit",
-    "kernel_commit": "9a10093",
+    "kernel_commit": "222ea1c",
     "engine": "CODESYS Development System 3.5.22.20 (ScriptEngine.plugin 4.2.0.0)"
   },
   "cli_commands": [
@@ -51,9 +51,9 @@
     "unforce"
   ],
   "counts": {
-    "verified": 71,
+    "verified": 75,
     "families": 12,
-    "pending": 11
+    "pending": 15
   },
   "verified": {
     "svc.start": "svc",
@@ -90,6 +90,10 @@
     "obj.member_text": "obj",
     "sym.config": "obj",
     "i18n.textlist": "obj",
+    "textlist.content": "obj",
+    "perm.audit": "proj",
+    "lib.install": "lib",
+    "pou.persistent": "obj",
     "proj.meta": "proj",
     "proj.library": "proj",
     "proj.save_as": "proj",
@@ -163,6 +167,10 @@
     "obj.member_text": "L2",
     "sym.config": "L3",
     "i18n.textlist": "L2",
+    "textlist.content": "L3",
+    "perm.audit": "L2",
+    "lib.install": "L3",
+    "pou.persistent": "L2",
     "proj.meta": "L2",
     "proj.library": "L3",
     "proj.save_as": "L3",
@@ -236,6 +244,10 @@
     "obj.member_text": "live_deep：方法实现体写入后参与编译且 0 错误",
     "sym.config": "live_deep：symbols.create -> create_symbol_config(comments, opc_ua, Guid.Empty)；build 后 138 datatypes / 69 signatures",
     "i18n.textlist": "live_deep：textlist.create(zh-CN,en) + add fr -> 3 种语言；export 238 B",
+    "textlist.content": "live_deep：读到行 id，写默认文本与 zh-CN 译文，导出 268 B",
+    "perm.audit": "live_deep：get_command_permission(仿真) -> guid 515e05ec-…，Owner/Everyone 均 true",
+    "lib.install": "live_deep：install_library(路径, repository) -> 可用库 537 -> 538",
+    "pou.persistent": "live_deep：create_persistentvars -> /…/PersistentVars",
     "proj.meta": "live_deep：title/company/version 写入并可回读",
     "proj.library": "live_deep：project.meta + export_library -> 4308 B 编译库（缺 company 会被拒）",
     "proj.save_as": "live_deep：副本变 primary，用文件+改名路径判据（引擎会报『正由…使用』但副本已完整）",
@@ -275,6 +287,22 @@
     "cli.verbs": "cli 冒烟：start/status/devices/call/stop，退出码 0/1/2/3/4 实测"
   },
   "pending": [
+    {
+      "id": "online.files",
+      "reason": "在线文件/源码上传需要真 PLC：仿真目标 connected=false，列目录报『获取文件入口失败』"
+    },
+    {
+      "id": "imagepool.content",
+      "reason": "images.add 重载歧义且需要真实图片文件，未验证"
+    },
+    {
+      "id": "cas.sourcecontrol",
+      "reason": "CAS（Git/SVN）扩展存在，但需要仓库、凭据和工作目录，未尝试"
+    },
+    {
+      "id": "noapi.objects",
+      "reason": "配方/报警配置/可视化/跟踪/应用合成器：262 个 stub 类里没有任何 create_recipe*/create_alarm*/create_visualization*/create_trace* 入口，对应 IDE 命令是弹框 → 无法无界面创建"
+    },
     {
       "id": "compare.projects",
       "reason": "project.compare 实测死路：compare_to 需要第二个工程对象，且同进程只能有一个 primary"

@@ -204,3 +204,22 @@ application.create_program("PLC_PRG", language=scriptengine.ImplementationLangua
 
 `task.priority = 20` → `TypeError: expected str, got int`；`"20"` 可以。
 只把 `watchdog.enabled` 打开、不设 `watchdog.time`，编译直接报 `MainTask: 无效的看门狗时间`。
+
+
+## 22. `install_library` 只传路径会报"值不能为 null"
+
+`librarymanager.install_library(path)` → `值不能为 null`。必须带上仓库对象：
+`install_library(path, repositories[0])`（`repositories` 是**属性**，不是方法）。
+装成功后可用库计数才会变（实测 537 → 538）。
+
+## 23. `setlanguagetext` 两个参数都是字符串
+
+`row.setlanguagetext(0, "计数器")` → `TypeError: expected str, got int`；
+正确写法 `row.setlanguagetext("zh-CN", "计数器")`。`setdefaulttext(...)` 反而返回 `True`。
+
+## 24. 这些对象根本没有创建入口（别再试了）
+
+配方、报警配置、可视化、跟踪（trace）、应用合成器：262 个 stub 类里没有
+`create_recipe*` / `create_alarm*` / `create_visualization*` / `create_trace*`，
+对应的 IDE 命令（`添加对象...`）是弹框。**无界面创建不了**，别把时间花在这里。
+跟踪只能对**已存在**的 trace 对象读写属性；可视化只能改已有对象的文本/布局命令。

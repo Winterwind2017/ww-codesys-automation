@@ -1,8 +1,8 @@
 # 能力清单（快照）
 
-由 `tools/sync_capabilities.py` 从内核生成；出处 `codesyskit@9a10093`。
+由 `tools/sync_capabilities.py` 从内核生成；出处 `codesyskit@222ea1c`。
 
-## 已打通（71）
+## 已打通（75）
 
 | 能力 | 族 | 级别 | 证据 |
 | --- | --- | --- | --- |
@@ -40,6 +40,10 @@
 | `obj.member_text` | 对象结构 | L2 | live_deep：方法实现体写入后参与编译且 0 错误 |
 | `sym.config` | 对象结构 | L3 | live_deep：symbols.create -> create_symbol_config(comments, opc_ua, Guid.Empty)；build 后 138 datatypes / 69 signatures |
 | `i18n.textlist` | 对象结构 | L2 | live_deep：textlist.create(zh-CN,en) + add fr -> 3 种语言；export 238 B |
+| `textlist.content` | 对象结构 | L3 | live_deep：读到行 id，写默认文本与 zh-CN 译文，导出 268 B |
+| `perm.audit` | 工程 | L2 | live_deep：get_command_permission(仿真) -> guid 515e05ec-…，Owner/Everyone 均 true |
+| `lib.install` | 库管理 | L3 | live_deep：install_library(路径, repository) -> 可用库 537 -> 538 |
+| `pou.persistent` | 对象结构 | L2 | live_deep：create_persistentvars -> /…/PersistentVars |
 | `proj.meta` | 工程 | L2 | live_deep：title/company/version 写入并可回读 |
 | `proj.library` | 工程 | L3 | live_deep：project.meta + export_library -> 4308 B 编译库（缺 company 会被拒） |
 | `proj.save_as` | 工程 | L3 | live_deep：副本变 primary，用文件+改名路径判据（引擎会报『正由…使用』但副本已完整） |
@@ -78,8 +82,12 @@
 | `engine.ironpython` | 引擎行为（实测事实） | L1 | sys.version = CODESYS.exe 3.5.22.20, ScriptEngine.plugin 4.2.0.0（IronPython 2.7） |
 | `cli.verbs` | 命令行 | L2 | cli 冒烟：start/status/devices/call/stop，退出码 0/1/2/3/4 实测 |
 
-## 未打通 / 已证伪（11）
+## 未打通 / 已证伪（15）
 
+- `online.files` — 在线文件/源码上传需要真 PLC：仿真目标 connected=false，列目录报『获取文件入口失败』
+- `imagepool.content` — images.add 重载歧义且需要真实图片文件，未验证
+- `cas.sourcecontrol` — CAS（Git/SVN）扩展存在，但需要仓库、凭据和工作目录，未尝试
+- `noapi.objects` — 配方/报警配置/可视化/跟踪/应用合成器：262 个 stub 类里没有任何 create_recipe*/create_alarm*/create_visualization*/create_trace* 入口，对应 IDE 命令是弹框 → 无法无界面创建
 - `compare.projects` — project.compare 实测死路：compare_to 需要第二个工程对象，且同进程只能有一个 primary
 - `gui_only_export` — 导出IEC61131-10 / 导出OPC UANodeSet / 计算并导出标准指标 / 目标设置文档导出：execute 返回正常但既无文件也无消息（弹对话框），headless 不可用
 - `online.real_plc` — 真 PLC 走网关：Gateway/软 PLC 是 Manual 服务，仅 SYSTEM/管理员可启动（sc start -> Access denied，DACL 里 IU 无启动权）；仿真路径已全通

@@ -80,8 +80,8 @@ finally:
 | IDE 命令 | **870 条**命令可枚举、可执行（name/guid/tokens） |
 | 库 | **537** 个可用、引用了哪些、`add_library` 真的生效 |
 | 交换 | PLCopenXML 导出 1–2 KB、原生导出 23 KB、整包归档 5.4 MB、运行时 m4 |
-| 对象模型 | GVL / DUT / 接口 / FB / 函数 + 方法/属性/动作；符号配置；文本表（多语言） |
-| 工程 | 工程信息、编译库导出、另存（副本变 primary）、用户/组、完整性检查、I/O 映射 CSV |
+| 对象模型 | GVL / DUT / 接口 / FB / 函数 + 方法/属性/动作；持久变量；符号配置；文本表（语言 + 行内容） |
+| 工程 | 工程信息、编译库导出（并可 `library.install` 装回仓库）、另存、用户/组、命令权限审计、完整性检查、I/O 映射 CSV |
 | 任务 | priority / interval / 看门狗（**值必须传字符串**） |
 | 在线 | **仿真全通**：`online.simulation` → `login` → `start/stop` → 读写 → `monitor` 采样 → `logout`；真 PLC 走网关仍需可启动的网关 |
 
@@ -158,6 +158,7 @@ python tools\install_skill.py --check   # 是否已装到 ~/.agents/skills
 | `proj.close` | 工程 | L3 | live_service：close -> {closed: path} |
 | `proj.info` | 工程 | L2 | live_service：application 路径为 /PLC/Plc Logic/Application |
 | `proj.tree` | 工程 | L2 | tree 按 /A/B/C 行走 get_children，段不存在 -> E_STATE |
+| `perm.audit` | 工程 | L2 | live_deep：get_command_permission(仿真) -> guid 515e05ec-…，Owner/Everyone 均 true |
 | `proj.meta` | 工程 | L2 | live_deep：title/company/version 写入并可回读 |
 | `proj.library` | 工程 | L3 | live_deep：project.meta + export_library -> 4308 B 编译库（缺 company 会被拒） |
 | `proj.save_as` | 工程 | L3 | live_deep：副本变 primary，用文件+改名路径判据（引擎会报『正由…使用』但副本已完整） |
@@ -173,6 +174,8 @@ python tools\install_skill.py --check   # 是否已装到 ~/.agents/skills
 | `obj.member_text` | 对象结构 | L2 | live_deep：方法实现体写入后参与编译且 0 错误 |
 | `sym.config` | 对象结构 | L3 | live_deep：symbols.create -> create_symbol_config(comments, opc_ua, Guid.Empty)；build 后 138 datatypes / 69 signatures |
 | `i18n.textlist` | 对象结构 | L2 | live_deep：textlist.create(zh-CN,en) + add fr -> 3 种语言；export 238 B |
+| `textlist.content` | 对象结构 | L3 | live_deep：读到行 id，写默认文本与 zh-CN 译文，导出 268 B |
+| `pou.persistent` | 对象结构 | L2 | live_deep：create_persistentvars -> /…/PersistentVars |
 | `obj.info` | 对象结构 | L2 | live_surface：object.info 返回 name/path/is_folder/has_textual_* /children |
 | `obj.rename` | 对象结构 | L3 | live_surface：rename -> PLC_MAIN 后回读名字一致 |
 | `obj.move` | 对象结构 | L3 | live_surface：move 进子文件夹再移回，路径随动 |
@@ -189,6 +192,7 @@ python tools\install_skill.py --check   # 是否已装到 ~/.agents/skills
 | `cmd.map` | IDE 命令通道 | L2 | docs/COMMANDS.md：832 条唯一命令 / 90 族，recon/commands.json 可复跑 |
 | `cmd.list` | IDE 命令通道 | L2 | live_surface：870 条命令，带 name/guid/description/tokens |
 | `cmd.execute` | IDE 命令通道 | L4 | live_surface：execute 重新编译，用引擎 stderr 判据得到 0 错误 |
+| `lib.install` | 库管理 | L3 | live_deep：install_library(路径, repository) -> 可用库 537 -> 538 |
 | `lib.list` | 库管理 | L2 | live_surface：4 条已引用 + 537 条可用 |
 | `lib.add` | 库管理 | L3 | live_surface：add_library(Standard) 后引用表里出现 Standard |
 | `xchg.export_xml` | 交换与归档 | L2 | live_surface：应用 1095 B / 设备子树 1988 B |

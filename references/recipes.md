@@ -224,3 +224,24 @@ client.io_export(r"D:\work\io.csv")                  # I/O 映射 CSV
 client.project_integrity(enable=True)
 client.project_users()                                # 只读；创建会被 (nobody) 拒
 ```
+
+
+## 18. 文本表内容 / 权限审计 / 库安装回环
+
+```python
+rows = client.textlist_rows(text_path)           # [{"id": "0000-0000-{…}-Version", "default": "1"}]
+rid = rows["items"][0]["id"]
+client.textlist_text(text_path, "Counter label", text_id=rid)
+client.textlist_text(text_path, "计数器", text_id=rid, language="zh-CN")
+client.textlist_export(text_path, r"D:\work\texts.xml")      # 268 B
+
+client.project_permissions("仿真", group="Owner")
+# {"command_guid": "515e05ec-…", "permitted": true, "groups": {"Owner": true, "Everyone": true}}
+
+lib = client.export_library(r"D:\work\DemoKit.compiled-library")   # 4308 B
+client.install_library(lib["path"])                                 # 537 -> 538 个可用库
+client.create_persistent("PersistentVars")
+```
+
+判据：文本要**读回**（`textlist_rows` 里默认文本变成你写的那句）；库安装看可用库计数变化；
+权限看 `permitted` 的布尔值，不要只看"调用没报错"。

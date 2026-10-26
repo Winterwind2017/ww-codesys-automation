@@ -53,6 +53,15 @@
 - [ ] `save_as` 判据看文件 + `is_primary`，别被"正被使用"的报错误导
 - [ ] 声称"执行成功"的 GUI 命令要查产物，没产物就是没做
 
+## D5. 收尾前最后一遍（都已验证）
+
+- [ ] 文本表：写入后 `textlist_rows` 读回默认文本/译文才算成功
+- [ ] 库：`export_library` 出文件 → `install_library(路径, 仓库)` → 计数 +1
+- [ ] 权限：`project_permissions(...)` 看 `permitted` 布尔，不看有没有抛异常
+- [ ] 持久变量：`create_persistentvars` 后路径在应用下
+- [ ] 在线文件/源码上传：仿真下必然 `E_UNAVAILABLE`，别当成功
+- [ ] 配方/报警/可视化/跟踪：**没有创建入口**，直接告诉用户 GUI 手工做
+
 ## E. 交付物
 
 - [ ] `project.save()` 后 `dirty: false`
